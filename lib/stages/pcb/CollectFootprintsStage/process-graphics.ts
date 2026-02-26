@@ -1,4 +1,4 @@
-import type { Footprint, FpPoly } from "kicadts"
+import type { Footprint, FpPoly, FpLine, FpCircle, FpArc } from "kicadts"
 import { applyToPoint } from "transformation-matrix"
 import type { ConverterContext } from "../../../types"
 import { mapTextLayer } from "./layer-utils"
@@ -31,7 +31,7 @@ export function processFootprintGraphics(
   if (!ctx.k2cMatPcb) return
 
   // Process fp_line elements
-  const lines = (footprint as any).fpLines || []
+  const lines = footprint.fpLines || []
   const lineArray = Array.isArray(lines) ? lines : lines ? [lines] : []
   for (const line of lineArray) {
     createFootprintLine(
@@ -44,7 +44,7 @@ export function processFootprintGraphics(
   }
 
   // Process fp_circle elements
-  const circles = (footprint as any).fpCircles || []
+  const circles = footprint.fpCircles || []
   const circleArray = Array.isArray(circles)
     ? circles
     : circles
@@ -61,7 +61,7 @@ export function processFootprintGraphics(
   }
 
   // Process fp_arc elements
-  const arcs = (footprint as any).fpArcs || []
+  const arcs = footprint.fpArcs || []
   const arcArray = Array.isArray(arcs) ? arcs : arcs ? [arcs] : []
   for (const arc of arcArray) {
     createFootprintArc(
@@ -92,7 +92,7 @@ export function processFootprintGraphics(
  */
 export function createFootprintLine(
   ctx: ConverterContext,
-  line: any,
+  line: FpLine,
   componentId: string,
   kicadComponentPos: { x: number; y: number },
   componentRotation: number,
@@ -136,7 +136,7 @@ export function createFootprintLine(
  */
 export function createFootprintCircle(
   ctx: ConverterContext,
-  circle: any,
+  circle: FpCircle,
   componentId: string,
   kicadComponentPos: { x: number; y: number },
   componentRotation: number,
@@ -219,7 +219,7 @@ function calculateArcCenter(
  */
 export function createFootprintArc(
   ctx: ConverterContext,
-  arc: any,
+  arc: FpArc,
   componentId: string,
   kicadComponentPos: { x: number; y: number },
   componentRotation: number,
