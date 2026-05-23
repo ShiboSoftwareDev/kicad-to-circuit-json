@@ -68,6 +68,8 @@ interface TraceRoutePointVia {
 }
 
 type TraceRoutePoint = TraceRoutePointWire | TraceRoutePointVia
+type NetTraceKey = string
+type SourceTraceId = string
 
 interface PcbTraceConnectivityNode {
   key: string
@@ -83,9 +85,9 @@ interface PcbTraceConnectivityNode {
 export class CollectTracesStage extends ConverterStage {
   private readonly PORT_MATCH_TOLERANCE = 1e-3
   private readonly POINT_KEY_PRECISION = 1e6
-  private readonly sourceTraceIdByLogicalConnectionKey = new Map<
-    string,
-    string
+  private readonly sourceTraceIdByNetTraceKey = new Map<
+    NetTraceKey,
+    SourceTraceId
   >()
 
   step(): boolean {
@@ -774,12 +776,12 @@ export class CollectTracesStage extends ConverterStage {
       netNum !== null
         ? (this.ctx.netNumToName?.get(netNum) ?? `Net-${netNum}`)
         : undefined
-    const sourceTraceKey = this.getLogicalSourceTraceKey({
+    const netTraceKey = this.getNetTraceKey({
       sourceNetId,
       connectedSourcePortIds,
     })
     const existingSourceTraceId =
-      this.sourceTraceIdByLogicalConnectionKey.get(sourceTraceKey)
+      this.sourceTraceIdByNetTraceKey.get(netTraceKey)
     if (existingSourceTraceId) {
       return existingSourceTraceId
     }
@@ -790,15 +792,15 @@ export class CollectTracesStage extends ConverterStage {
       display_name: netName,
     })
 
-    this.sourceTraceIdByLogicalConnectionKey.set(
-      sourceTraceKey,
+    this.sourceTraceIdByNetTraceKey.set(
+      netTraceKey,
       sourceTrace.source_trace_id,
     )
 
     return sourceTrace.source_trace_id
   }
 
-  private getLogicalSourceTraceKey({
+  private getNetTraceKey({
     sourceNetId,
     connectedSourcePortIds,
   }: {
