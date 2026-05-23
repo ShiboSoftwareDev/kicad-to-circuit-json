@@ -80,6 +80,8 @@ export class CollectGraphicsStage extends ConverterStage {
     const arcArray = getGraphicArcs(this.ctx.kicadPcb)
     const circleArray = getGraphicCircles(this.ctx.kicadPcb)
     const curveArray = getGraphicCurves(this.ctx.kicadPcb)
+    const grRects = this.ctx.kicadPcb.graphicRects || []
+    const rectArray = Array.isArray(grRects) ? grRects : [grRects]
 
     const edgeCutPrimitives: BoardPrimitive[] = []
 
@@ -153,14 +155,20 @@ export class CollectGraphicsStage extends ConverterStage {
       })
     }
 
+    for (const rect of rectArray) {
+      const layerStr = getGraphicLayerNames(rect).join(" ")
+      if (!layerStr.includes("Edge.Cuts")) continue
+
+      edgeCutPrimitives.push(...this.getRectEdgeCutPrimitives(rect))
+    }
+
     // Create board outline from edge cuts
     if (edgeCutPrimitives.length > 0) {
       this.createBoardOutline(edgeCutPrimitives)
     }
 
     // Process gr_rect elements
-    const grRects = this.ctx.kicadPcb.graphicRects || []
-    for (const rect of grRects) {
+    for (const rect of rectArray) {
       this.processRectangle(rect)
     }
 
@@ -301,6 +309,34 @@ export class CollectGraphicsStage extends ConverterStage {
       type: "line",
       start: segment.end,
       end: segment.start,
+    }
+  }
+
+  private getRectEdgeCutPrimitives(rect: any): BoardPrimitive[] {
+    const { start, end } = this.getRectStartEnd(rect)
+    const topLeft = { x: start.x, y: start.y }
+    const topRight = { x: end.x, y: start.y }
+    const bottomRight = { x: end.x, y: end.y }
+    const bottomLeft = { x: start.x, y: end.y }
+
+    return [
+      { type: "line", start: topLeft, end: topRight },
+      { type: "line", start: topRight, end: bottomRight },
+      { type: "line", start: bottomRight, end: bottomLeft },
+      { type: "line", start: bottomLeft, end: topLeft },
+    ]
+  }
+
+  private getRectStartEnd(rect: any) {
+    return {
+      start: {
+        x: rect.start?.x ?? rect._sxStart?._x ?? 0,
+        y: rect.start?.y ?? rect._sxStart?._y ?? 0,
+      },
+      end: {
+        x: rect.end?.x ?? rect._sxEnd?._x ?? 0,
+        y: rect.end?.y ?? rect._sxEnd?._y ?? 0,
+      },
     }
   }
 
