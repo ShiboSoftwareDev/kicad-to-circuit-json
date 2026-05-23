@@ -83,6 +83,10 @@ interface PcbTraceConnectivityNode {
 export class CollectTracesStage extends ConverterStage {
   private readonly PORT_MATCH_TOLERANCE = 1e-3
   private readonly POINT_KEY_PRECISION = 1e6
+  private readonly sourceTraceIdByLogicalConnectionKey = new Map<
+    string,
+    string
+  >()
 
   step(): boolean {
     if (
@@ -770,12 +774,37 @@ export class CollectTracesStage extends ConverterStage {
       netNum !== null
         ? (this.ctx.netNumToName?.get(netNum) ?? `Net-${netNum}`)
         : undefined
+    const sourceTraceKey = this.getLogicalSourceTraceKey({
+      sourceNetId,
+      connectedSourcePortIds,
+    })
+    const existingSourceTraceId =
+      this.sourceTraceIdByLogicalConnectionKey.get(sourceTraceKey)
+    if (existingSourceTraceId) {
+      return existingSourceTraceId
+    }
+
     const sourceTrace = this.ctx.db.source_trace.insert({
       connected_source_port_ids: connectedSourcePortIds,
       connected_source_net_ids: [sourceNetId],
       display_name: netName,
     })
 
+    this.sourceTraceIdByLogicalConnectionKey.set(
+      sourceTraceKey,
+      sourceTrace.source_trace_id,
+    )
+
     return sourceTrace.source_trace_id
+  }
+
+  private getLogicalSourceTraceKey({
+    sourceNetId,
+    connectedSourcePortIds,
+  }: {
+    sourceNetId: string
+    connectedSourcePortIds: string[]
+  }) {
+    return `${sourceNetId}:${[...connectedSourcePortIds].sort().join("|")}`
   }
 }
