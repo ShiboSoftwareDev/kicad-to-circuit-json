@@ -59,6 +59,7 @@ export class InitializePcbContextStage extends ConverterStage {
     const arcArray = getGraphicArcs(this.ctx.kicadPcb)
     const circleArray = getGraphicCircles(this.ctx.kicadPcb)
     const curveArray = getGraphicCurves(this.ctx.kicadPcb)
+    const rectArray = this.getGraphicRects()
 
     const xs: number[] = []
     const ys: number[] = []
@@ -122,6 +123,15 @@ export class InitializePcbContextStage extends ConverterStage {
       }
     }
 
+    for (const rect of rectArray) {
+      const layerStr = getGraphicLayerNames(rect).join(" ")
+      if (!layerStr.includes("Edge.Cuts")) continue
+
+      const { start, end } = this.getRectStartEnd(rect)
+      xs.push(start.x, end.x)
+      ys.push(start.y, end.y)
+    }
+
     if (xs.length === 0 || ys.length === 0) {
       // No edge cuts found, use a default center
       return { x: 0, y: 0 }
@@ -136,6 +146,24 @@ export class InitializePcbContextStage extends ConverterStage {
     return {
       x: (minX + maxX) / 2,
       y: (minY + maxY) / 2,
+    }
+  }
+
+  private getGraphicRects() {
+    const rects = this.ctx.kicadPcb?.graphicRects || []
+    return Array.isArray(rects) ? rects : [rects]
+  }
+
+  private getRectStartEnd(rect: any) {
+    return {
+      start: {
+        x: rect.start?.x ?? rect._sxStart?._x ?? 0,
+        y: rect.start?.y ?? rect._sxStart?._y ?? 0,
+      },
+      end: {
+        x: rect.end?.x ?? rect._sxEnd?._x ?? 0,
+        y: rect.end?.y ?? rect._sxEnd?._y ?? 0,
+      },
     }
   }
 }
