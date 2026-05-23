@@ -59,6 +59,8 @@ interface BoardContour {
   area: number
 }
 
+const EDGE_CUT_POINT_EPSILON = 0.01
+
 /**
  * CollectGraphicsStage processes KiCad graphics elements:
  * - gr_line on Edge.Cuts → pcb_board.outline
@@ -674,16 +676,20 @@ export class CollectGraphicsStage extends ConverterStage {
     p1: { x: number; y: number },
     p2: { x: number; y: number },
   ): boolean {
-    const epsilon = 0.001
-    return Math.abs(p1.x - p2.x) < epsilon && Math.abs(p1.y - p2.y) < epsilon
+    return (
+      Math.abs(p1.x - p2.x) < EDGE_CUT_POINT_EPSILON &&
+      Math.abs(p1.y - p2.y) < EDGE_CUT_POINT_EPSILON
+    )
   }
 
   private pointsEqualKicad(
     p1: { x: number; y: number },
     p2: { x: number; y: number },
   ): boolean {
-    const epsilon = 0.001
-    return Math.abs(p1.x - p2.x) < epsilon && Math.abs(p1.y - p2.y) < epsilon
+    return (
+      Math.abs(p1.x - p2.x) < EDGE_CUT_POINT_EPSILON &&
+      Math.abs(p1.y - p2.y) < EDGE_CUT_POINT_EPSILON
+    )
   }
 
   private calculateWidth(points: Array<{ x: number; y: number }>): number {
